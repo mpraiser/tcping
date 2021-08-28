@@ -9,11 +9,11 @@
 
 ## Usage
 
-```
+```bash
 pip install tcping
 ```
 
-```
+```bash
 ➜  ~ tcping api.github.com
 Connected to api.github.com[:80]: seq=1 time=236.44 ms
 Connected to api.github.com[:80]: seq=2 time=237.99 ms
@@ -31,24 +31,23 @@ Connected to api.github.com[:80]: seq=10 time=251.77 ms
 minimum = 233.51ms, maximum = 251.77ms, average = 243.40ms
 ```
 
-呵呵，GFW，66666
- 
-```
+```bash
 ➜  ~ tcping --help
 Usage: tcping [OPTIONS] HOST
 
 Options:
-  -p, --port INTEGER      Tcp port (default 80)
-  -c, --count INTEGER     Try connections counts, 0 for endless pinging
-                          (default 0).
-  -t, --timeout FLOAT     Timeout seconds (default 1)
-  --report / --no-report  Show report to replace statistics
+  -p, --port INTEGER      Tcp port. (default: 80)
+  -c, --count INTEGER     Try connections counts, 0 for endless pinging.
+                          (default: 0).
+  -t, --timeout FLOAT     Timeout seconds. (default: 1)
+  --report / --no-report  Show report to replace statistics.
+  -i, --interval FLOAT    Interval of pinging. (default: 1)
   --help                  Show this message and exit.
 ```
 
 其中这个 `--report` 可以生成一个 ascii 的 table，好看一点吧。。。
 
-```
+```bash
 ➜  ~ tcping api.github.com -c 3 --report
 Connected to api.github.com[:80]: seq=1 time=237.79 ms
 Connected to api.github.com[:80]: seq=2 time=237.72 ms
@@ -77,4 +76,4 @@ print(status)
 
 ## END 
 
-其实写这个主要是为了测试搭建翻墙 VPS 的 tcp 延迟。。。
+其实写这个主要是为了测试VPS的tcp延迟。。。

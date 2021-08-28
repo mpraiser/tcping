@@ -117,7 +117,7 @@ class Timer(object):
 
 
 class Ping(object):
-    def __init__(self, host: str, port: int, timeout: float):
+    def __init__(self, host: str, port: int, timeout: float, interval: float):
         self.print_ = Print()
         self.timer = Timer()
 
@@ -127,6 +127,7 @@ class Ping(object):
         self._host = host
         self._port = port
         self._timeout = timeout
+        self._interval = interval
 
         self.print_.set_table_field_names(
             ['Host', 'Port', 'Successed', 'Failed', 'Success Rate', 'Minimum', 'Maximum', 'Average'])
@@ -176,7 +177,7 @@ class Ping(object):
         while True:
             s = self._create_socket(socket.AF_INET, socket.SOCK_STREAM)
             try:
-                time.sleep(1)
+                time.sleep(self._interval)
                 cost_time = self.timer.cost((
                     (s.connect, (self._host, self._port)),
                     (s.shutdown, None)
@@ -207,13 +208,14 @@ class Ping(object):
 
 
 @click.command()
-@click.option('--port', '-p', default=80, type=click.INT, help='Tcp port (default 80)')
-@click.option('--count', '-c', default=0, type=click.INT, help='Try connections counts, 0 for endless pinging (default 0).')
-@click.option('--timeout', '-t', default=1, type=click.FLOAT, help='Timeout seconds (default 1)')
-@click.option('--report/--no-report', default=True, help='Show report to replace statistics')
+@click.option('--port', '-p', default=80, type=click.INT, help='Tcp port. (default: 80)')
+@click.option('--count', '-c', default=0, type=click.INT, help='Try connections counts, 0 for endless pinging. (default: 0).')
+@click.option('--timeout', '-t', default=1, type=click.FLOAT, help='Timeout seconds. (default: 1)')
+@click.option('--report/--no-report', default=True, help='Show report to replace statistics.')
+@click.option('--interval', '-i', default=1, type=click.FLOAT, help='Interval of pinging. (default: 1)')
 @click.argument('host')
-def cli(host: str, port: int, count: int, timeout: float, report: bool):
-    ping = Ping(host, port, timeout)
+def cli(host: str, port: int, count: int, timeout: float, report: bool, interval: float):
+    ping = Ping(host, port, timeout, interval)
     try:
         ping.ping(count)
     except KeyboardInterrupt:
@@ -228,4 +230,3 @@ def cli(host: str, port: int, count: int, timeout: float, report: bool):
 
 if __name__ == '__main__':
     cli()
-

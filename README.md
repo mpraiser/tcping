@@ -9,11 +9,11 @@ We often use the network is based on tcp, So use tcping more accurately.
 
 ## Usage
 
-```
+```bash
 pip install tcping
 ```
 
-```
+```bash
 ➜  ~ tcping api.github.com
 Connected to api.github.com[:80]: seq=1 time=236.44 ms
 Connected to api.github.com[:80]: seq=2 time=237.99 ms
@@ -31,18 +31,17 @@ Connected to api.github.com[:80]: seq=10 time=251.77 ms
 minimum = 233.51ms, maximum = 251.77ms, average = 243.40ms
 ```
 
-GFW Fucking.
- 
-```
+```bash
 ➜  ~ tcping --help
 Usage: tcping [OPTIONS] HOST
 
 Options:
-  -p, --port INTEGER      Tcp port (default 80)
-  -c, --count INTEGER     Try connections counts, 0 for endless pinging
-                          (default 0).
-  -t, --timeout FLOAT     Timeout seconds (default 1)
-  --report / --no-report  Show report to replace statistics
+  -p, --port INTEGER      Tcp port. (default: 80)
+  -c, --count INTEGER     Try connections counts, 0 for endless pinging.
+                          (default: 0).
+  -t, --timeout FLOAT     Timeout seconds. (default: 1)
+  --report / --no-report  Show report to replace statistics.
+  -i, --interval FLOAT    Interval of pinging. (default: 1)
   --help                  Show this message and exit.
 ```
 
@@ -77,5 +76,6 @@ print(status)
 
 ## END 
 
-Huh, I just want to check my VPS's network status.
+- Huh, I just want to check my VPS's network status.
 
+- I've got a strange network condition where ICMP ping does not have any loss but TCP has a great loss with random delay more than 1 sec.
