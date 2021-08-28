@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-    Use tcp ping host, just like ping comppand
+Use tcp ping host, just like ping comppand
 """
 
 import socket
@@ -10,14 +10,14 @@ import time
 import click
 import sys
 
+from typing import Iterable, Callable, Any
 from collections import namedtuple
 from functools import partial
-from six.moves import zip_longest
 from six import print_
 from timeit import default_timer as timer
 from prettytable import PrettyTable
 
-__version__ = "0.1.1rc1"
+__version__ = "0.1.2"
 
 Statistics = namedtuple('Statistics', [
     'host',
@@ -32,17 +32,22 @@ Statistics = namedtuple('Statistics', [
 iprint = partial(print_, flush=True)
 
 
-def avg(x):
+def avg(x: list) -> float:
     return sum(x) / float(len(x))
 
 
 class Socket(object):
-    def __init__(self, family, type_, timeout):
-        s = socket.socket(family, type_)
+    def __init__(
+        self, 
+        family: socket.AddressFamily,
+        sock_type: socket.SocketKind, 
+        timeout: float
+    ):
+        s = socket.socket(family, sock_type)
         s.settimeout(timeout)
         self._s = s
 
-    def connect(self, host, port=80):
+    def connect(self, host: str, port: int):
         self._s.connect((host, int(port)))
 
     def shutdown(self):
@@ -62,12 +67,9 @@ class Print(object):
         statistics_group = []
         for row in self.rows:
             total = row.successed + row.failed
-            statistics_header = '\n--- {}[:{}] tcping statistics ---'.format(
-                row.host, row.port)
-            statistics_body = '\n{} connections, {} successed, {} failed, {} success rate'.format(
-                total, row.successed, row.failed, row.success_rate)
-            statistics_footer = '\nminimum = {}, maximum = {}, average = {}'.format(
-                row.minimum, row.maximum, row.average)
+            statistics_header = f"\n--- {row.host}[:{row.port}] tcping statistics ---"
+            statistics_body = f"\n{total} connections, {row.successed} successed, {row.failed} failed, {row.success_rate} success rate"
+            statistics_footer = f"\nminimum = {row.minimum}, maximum = {row.maximum}, average = {row.average}"
 
             statistics = statistics_header + statistics_body + statistics_footer
             statistics_group.append(statistics)
@@ -84,10 +86,10 @@ class Print(object):
 
         return '\n' + x.get_string()
 
-    def set_table_field_names(self, field_names):
+    def set_table_field_names(self, field_names: Iterable[str]):
         self.table_field_names = field_names
 
-    def add_statistics(self, row):
+    def add_statistics(self, row: Statistics):
         self.rows.append(row)
 
 
@@ -102,9 +104,9 @@ class Timer(object):
     def stop(self):
         self._stop = timer()
 
-    def cost(self, funcs, args):
+    def cost(self, targets: Iterable[tuple[Callable, Any]]):
         self.start()
-        for func, arg in zip_longest(funcs, args):
+        for func, arg in targets:
             if arg:
                 func(*arg)
             else:
@@ -115,7 +117,7 @@ class Timer(object):
 
 
 class Ping(object):
-    def __init__(self, host, port=80, timeout=1):
+    def __init__(self, host: str, port: int, timeout: float):
         self.print_ = Print()
         self.timer = Timer()
 
@@ -129,23 +131,23 @@ class Ping(object):
         self.print_.set_table_field_names(
             ['Host', 'Port', 'Successed', 'Failed', 'Success Rate', 'Minimum', 'Maximum', 'Average'])
 
-    def _create_socket(self, family, type_):
-        return Socket(family, type_, self._timeout)
+    def _create_socket(self, family: socket.AddressFamily, sock_type: socket.SocketKind):
+        return Socket(family, sock_type, self._timeout)
 
     def _success_rate(self):
         count = self._successed + self._failed
         try:
             rate = (float(self._successed) / count) * 100
-            rate = '{0:.2f}'.format(rate)
+            rate = f"{rate:.2f}"
         except ZeroDivisionError:
-            rate = '0.00'
+            rate = "0.00"
         return rate
 
     def statistics(self, n):
         conn_times = self._conn_times if self._conn_times != [] else [0]
-        minimum = '{0:.2f}ms'.format(min(conn_times))
-        maximum = '{0:.2f}ms'.format(max(conn_times))
-        average = '{0:.2f}ms'.format(avg(conn_times))
+        minimum = f"{min(conn_times):.2f} ms"
+        maximum = f"{max(conn_times):.2f} ms"
+        average = f"{avg(conn_times):.2f} ms"
         success_rate = self._success_rate() + '%'
 
         self.print_.add_statistics(Statistics(
@@ -166,23 +168,25 @@ class Ping(object):
     def status(self):
         return self._successed == 0
 
-    def ping(self, count=10):
-        for n in range(1, count + 1):
+    def ping(self, count: int):
+        """
+        :param count: if 0, it will keep pinging.
+        """
+        n = 0
+        while True:
             s = self._create_socket(socket.AF_INET, socket.SOCK_STREAM)
             try:
                 time.sleep(1)
-                cost_time = self.timer.cost(
-                    (s.connect, s.shutdown),
-                    ((self._host, self._port), None))
+                cost_time = self.timer.cost((
+                    (s.connect, (self._host, self._port)),
+                    (s.shutdown, None)
+                ))
                 s_runtime = 1000 * (cost_time)
-
-                iprint("Connected to %s[:%s]: seq=%d time=%.2f ms" % (
-                    self._host, self._port, n, s_runtime))
-
+                iprint(f"Connected to {self._host}[:{self._port}]: seq = {n}, time = {s_runtime:.2f} ms")
                 self._conn_times.append(s_runtime)
+
             except socket.timeout:
-                iprint("Connected to %s[:%s]: seq=%d time out!" % (
-                    self._host, self._port, n))
+                iprint(f"Connected to {self._host}[:{self._port}]: seq = {n} time out!")
                 self._failed += 1
 
             except KeyboardInterrupt:
@@ -194,17 +198,21 @@ class Ping(object):
 
             finally:
                 s.close()
+            
+            n += 1
+            if count > 0 and n >= count:
+                break
 
         self.statistics(n)
 
 
 @click.command()
-@click.option('--port', '-p', default=80, type=click.INT, help='Tcp port')
-@click.option('--count', '-c', default=10, type=click.INT, help='Try connections counts')
-@click.option('--timeout', '-t', default=1, type=click.FLOAT, help='Timeout seconds')
-@click.option('--report/--no-report', default=False, help='Show report to replace statistics')
+@click.option('--port', '-p', default=80, type=click.INT, help='Tcp port (default 80)')
+@click.option('--count', '-c', default=0, type=click.INT, help='Try connections counts, 0 for endless pinging (default 0).')
+@click.option('--timeout', '-t', default=1, type=click.FLOAT, help='Timeout seconds (default 1)')
+@click.option('--report/--no-report', default=True, help='Show report to replace statistics')
 @click.argument('host')
-def cli(host, port, count, timeout, report):
+def cli(host: str, port: int, count: int, timeout: float, report: bool):
     ping = Ping(host, port, timeout)
     try:
         ping.ping(count)

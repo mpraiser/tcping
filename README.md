@@ -38,11 +38,12 @@ GFW Fucking.
 Usage: tcping [OPTIONS] HOST
 
 Options:
-  -p, --port INTEGER      Tcp port
-  -c, --count INTEGER     Try connections counts
-  -t, --timeout FLOAT     Timeout seconds
+  -p, --port INTEGER      Tcp port (default 80)
+  -c, --count INTEGER     Try connections counts, 0 for endless pinging
+                          (default 0).
+  -t, --timeout FLOAT     Timeout seconds (default 1)
   --report / --no-report  Show report to replace statistics
-  --help  
+  --help                  Show this message and exit.
 ```
 
 the result is ascii table by using `--report`.
